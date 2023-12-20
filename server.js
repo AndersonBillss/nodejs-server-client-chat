@@ -1,4 +1,5 @@
 const net = require('net')
+const fs = require('fs')
 
 let clientNum = 1
 
@@ -103,6 +104,19 @@ const server = net.createServer(client => {
                     clients.splice(kickedUserIndex, 1);
                     broadcast(`${command[1]} left the chat`)
                 }
+                //disconnect command
+            } else if (command[0] === '/disconnect'){
+                let currentUserIndex
+                clients.forEach((user, index) => {
+                    if (client === user.info){
+                        currentUserIndex = index
+                    }
+                })
+                client.write(`You have left the chat`)
+                broadcast(`${clients[currentUserIndex].userName} left the chat`, client)
+                client.end()
+                clients.splice(currentUserIndex, 1);
+
                 //clientlist command
             } else if(command[0] === '/clientlist'){
                 let clientList = ''
@@ -121,6 +135,11 @@ const server = net.createServer(client => {
 
 }).listen(5000, () => {
     console.log(`Listening on port ${server.address().port}`)
+    fs.appendFile('server.log', `\n\n\n ---New Chat--- \n\n`, (err) => {
+        if (err) {
+            console.error('Error writing to server.log:', err);
+        }
+    });
 })
 
 function broadcast(message, sender) {
@@ -129,5 +148,9 @@ function broadcast(message, sender) {
             client.info.write(message)
         }
     });
-    console.log(message)
+    fs.appendFile('server.log', message + '\n', (err) => {
+        if (err) {
+            console.error('Error writing to server.log:', err);
+        }
+    });
 }
